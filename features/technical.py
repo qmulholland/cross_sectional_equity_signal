@@ -102,3 +102,32 @@ def compute_volatility(df: pd.DataFrame, windows: list[int] = [5, 10, 21]) -> pd
         df[col_name] = df.groupby("ticker")["ret_1d"].rolling(window=w, min_periods=1).std().reset_index(level=0, drop=True)
 
     return df
+
+def cross_sectional_zscore(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    """
+    Compute cross-sectional z-scores for specified features on each date.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain 'date' and 'ticker' columns
+    feature_cols : list[str]
+        List of feature column names to normalize
+
+    Returns
+    -------
+    pd.DataFrame
+        Original df with new columns:
+        - original feature name + '_z' (e.g., 'mom_5_z', 'vol_10_z')
+    """
+    df = df.copy()
+    df = df.sort_values(["date", "ticker"])
+
+    for col in feature_cols:
+        z_col = f"{col}_z"
+        # Cross-sectional z-score per date
+        df[z_col] = df.groupby("date")[col].transform(
+            lambda x: (x - x.mean()) / x.std(ddof=0)
+        )
+
+    return df
