@@ -46,3 +46,59 @@ def compute_daily_returns(prices: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+def compute_momentum(df: pd.DataFrame, windows: list[int] = [5, 10, 21]) -> pd.DataFrame:
+    """
+    Compute rolling momentum features for each ticker.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain 'ticker', 'date', and 'ret_1d'
+    windows : list[int]
+        List of rolling window sizes in days
+
+    Returns
+    -------
+    pd.DataFrame
+        Original df with new columns added:
+        - mom_5, mom_10, mom_21, etc.
+    """
+    df = df.copy()
+    df = df.sort_values(["ticker", "date"])
+
+    for w in windows:
+        # Momentum = cumulative return over past w days
+        col_name = f"mom_{w}"
+        df[col_name] = (
+            df.groupby("ticker")["ret_1d"]
+            .apply(lambda x: (1 + x).rolling(window=w, min_periods=1).apply(lambda r: r.prod() - 1))
+        )
+
+    return df
+
+def compute_volatility(df: pd.DataFrame, windows: list[int] = [5, 10, 21]) -> pd.DataFrame:
+    """
+    Compute rolling volatility features for each ticker.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain 'ticker', 'date', and 'ret_1d'
+    windows : list[int]
+        List of rolling window sizes in days
+
+    Returns
+    -------
+    pd.DataFrame
+        Original df with new columns added:
+        - vol_5, vol_10, vol_21, etc.
+    """
+    df = df.copy()
+    df = df.sort_values(["ticker", "date"])
+
+    for w in windows:
+        col_name = f"vol_{w}"
+        df[col_name] = df.groupby("ticker")["ret_1d"].rolling(window=w, min_periods=1).std().reset_index(level=0, drop=True)
+
+    return df
