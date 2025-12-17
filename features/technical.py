@@ -131,3 +131,35 @@ def cross_sectional_zscore(df: pd.DataFrame, feature_cols: list[str]) -> pd.Data
         )
 
     return df
+
+
+def generate_signal(df: pd.DataFrame, feature_cols: list[str], weights: list[float] | None = None) -> pd.DataFrame:
+    """
+    Generate a predicted return signal as a weighted sum of features.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain z-scored feature columns.
+    feature_cols : list[str]
+        Columns to combine into the signal.
+    weights : list[float] or None
+        Weights for each feature. If None, equal weighting is used.
+
+    Returns
+    -------
+    pd.DataFrame
+        Original df with new column:
+        - 'pred_signal'
+    """
+    df = df.copy()
+
+    if weights is None:
+        weights = [1.0] * len(feature_cols)
+
+    if len(weights) != len(feature_cols):
+        raise ValueError("Length of weights must match number of features")
+
+    df['pred_signal'] = sum(df[f] * w for f, w in zip(feature_cols, weights))
+    return df
+
