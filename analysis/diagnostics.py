@@ -7,7 +7,20 @@ Includes:
 - Backtest sanity checks
 """
 
+import sys
+from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
+
+# ------------------------------
+# Add project root to sys.path
+# ------------------------------
+root_path = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_path))
+
+# ------------------------------
+# Imports from project modules
+# ------------------------------
 from data.loader import load_prices
 from features.technical import (
     compute_daily_returns,
@@ -17,7 +30,10 @@ from features.technical import (
     generate_signal
 )
 from backtest import backtest_decile
-import matplotlib.pyplot as plt
+
+# ------------------------------
+# Diagnostic functions
+# ------------------------------
 
 def check_data(prices: pd.DataFrame):
     """Check basic data integrity."""
@@ -29,7 +45,6 @@ def check_data(prices: pd.DataFrame):
     print("Date range:", prices['date'].min(), "to", prices['date'].max())
     print()
 
-
 def check_features(prices: pd.DataFrame, feature_cols: list[str]):
     """Check basic stats of features."""
     print("=== FEATURE CHECK ===")
@@ -37,9 +52,11 @@ def check_features(prices: pd.DataFrame, feature_cols: list[str]):
         if col not in prices.columns:
             print(f"WARNING: Column {col} not found")
             continue
-        print(f"{col} | min: {prices[col].min():.4f}, max: {prices[col].max():.4f}, mean: {prices[col].mean():.4f}, std: {prices[col].std():.4f}")
+        print(
+            f"{col} | min: {prices[col].min():.4f}, max: {prices[col].max():.4f}, "
+            f"mean: {prices[col].mean():.4f}, std: {prices[col].std():.4f}"
+        )
     print()
-
 
 def check_signal(prices: pd.DataFrame, signal_col: str):
     """Check signal distribution."""
@@ -47,9 +64,11 @@ def check_signal(prices: pd.DataFrame, signal_col: str):
     if signal_col not in prices.columns:
         print(f"WARNING: Signal column {signal_col} not found")
         return
-    print(f"{signal_col} | min: {prices[signal_col].min():.4f}, max: {prices[signal_col].max():.4f}, mean: {prices[signal_col].mean():.4f}, std: {prices[signal_col].std():.4f}")
+    print(
+        f"{signal_col} | min: {prices[signal_col].min():.4f}, max: {prices[signal_col].max():.4f}, "
+        f"mean: {prices[signal_col].mean():.4f}, std: {prices[signal_col].std():.4f}"
+    )
     print()
-
 
 def check_backtest(prices: pd.DataFrame, signal_col='pred_signal', ret_col='ret_1d'):
     """Run simple backtest and plot cumulative PnL."""
@@ -66,6 +85,9 @@ def check_backtest(prices: pd.DataFrame, signal_col='pred_signal', ret_col='ret_
     plt.ylabel("Cumulative PnL")
     plt.show()
 
+# ------------------------------
+# Main workflow
+# ------------------------------
 
 if __name__ == "__main__":
     # Example workflow
