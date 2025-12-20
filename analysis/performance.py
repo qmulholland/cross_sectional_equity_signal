@@ -5,7 +5,7 @@ Milestones implemented:
 1. Mean daily return, Std Dev, Sharpe, Hit Rate
 2. Transaction costs
 3. Out-of-sample split (train/test by date)
-4. Benchmark comparison (equal-weighted portfolio)
+4. Benchmark comparison (equal-weighted portfolio and SPY)
 """
 
 import pandas as pd
@@ -23,6 +23,9 @@ from features.technical import (
 from backtest.backtest import backtest_decile
 from costs.costs import apply_transaction_costs
 
+# Add SPY ticker constant
+SPY_TICKER = "SPY"
+
 
 def compute_metrics(pnl: pd.Series):
     """Compute mean, std, Sharpe, hit rate."""
@@ -32,59 +35,91 @@ def compute_metrics(pnl: pd.Series):
     hit_rate = (pnl > 0).sum() / len(pnl)
     return mean, std, sharpe, hit_rate
 
+def print_metrics_summary(label, pnl_series, initial_capital=1000):
+    """Helper to print requested metrics including Maximum Drawdown."""
+    # Basic Metrics
+    mean = pnl_series.mean()
+    std = pnl_series.std()
+    sharpe = (mean / std) * np.sqrt(252)
+    hit_rate = (pnl_series > 0).mean() * 100
+    
+    # Compounded Growth
+    cum_returns = (1 + pnl_series).cumprod()
+    final_value = initial_capital * cum_returns.iloc[-1]
+    
+    # Maximum Drawdown calculation
+    # We use the compounded returns series to find the peak-to-trough decline
+    running_max = cum_returns.cummax()
+    drawdown = (cum_returns - running_max) / running_max
+    max_drawdown = drawdown.min() * 100  # Expressed as a negative percentage
+    
+    print(f"=== {label} ===")
+    print(f"Annualized Sharpe: {sharpe:.2f}")
+    print(f"Hit rate: {hit_rate:.1f}%")
+    print(f"Max Drawdown: {max_drawdown:.2f}%")
+    print(f"Compounded Growth (Start $1000): ${final_value:,.2f}")
+    print()
 
 def performance_analysis(tickers, start_date="2020-01-01", split_date="2023-01-01"):
-    # Load data
+    # ... [Data loading and feature engineering code remains the same] ...
     prices = load_prices(tickers, start_date=start_date)
-
-    # Compute features and signals
     prices = compute_daily_returns(prices)
     prices = compute_momentum(prices)
     prices = compute_volatility(prices)
-
+    
     features = ["mom_5", "mom_10", "mom_21", "vol_5", "vol_10", "vol_21"]
     prices = cross_sectional_zscore(prices, features)
     signal_features = [f"{f}_z" for f in features]
     prices = generate_signal(prices, signal_features)
 
-    # Split in-sample and out-of-sample
     train = prices[prices["date"] < split_date].copy()
     test = prices[prices["date"] >= split_date].copy()
 
-    print("=== IN-SAMPLE PERFORMANCE ===")
+    # --- In-sample performance ---
     pnl_train = backtest_decile(train, signal_col="pred_signal", ret_col="ret_1d")
     pnl_train = apply_transaction_costs(pnl_train, cost_bps=5)
-    metrics_train = compute_metrics(pnl_train)
-    print(f"Mean daily return: {metrics_train[0]:.5f}")
-    print(f"Std dev: {metrics_train[1]:.5f}")
-    print(f"Annualized Sharpe: {metrics_train[2]:.2f}")
-    print(f"Hit rate: {metrics_train[3]*100:.1f}%")
-    (pnl_train.cumsum()).plot(title="In-Sample Cumulative PnL", figsize=(10,5))
+    print_metrics_summary("IN-SAMPLE PERFORMANCE", pnl_train)
+    ((1 + pnl_train).cumprod() - 1).plot(title="In-Sample Compounded PnL", figsize=(10,5),
+                                            ylabel="Compounded Total Return", xlabel="Date")
     plt.show()
 
-    print("\n=== OUT-OF-SAMPLE PERFORMANCE ===")
+    # --- Out-of-sample performance ---
     pnl_test = backtest_decile(test, signal_col="pred_signal", ret_col="ret_1d")
     pnl_test = apply_transaction_costs(pnl_test, cost_bps=5)
-    metrics_test = compute_metrics(pnl_test)
-    print(f"Mean daily return: {metrics_test[0]:.5f}")
-    print(f"Std dev: {metrics_test[1]:.5f}")
-    print(f"Annualized Sharpe: {metrics_test[2]:.2f}")
-    print(f"Hit rate: {metrics_test[3]*100:.1f}%")
-    (pnl_test.cumsum()).plot(title="Out-of-Sample Cumulative PnL", figsize=(10,5))
+    print_metrics_summary("OUT-OF-SAMPLE PERFORMANCE", pnl_test)
+    ((1 + pnl_test).cumprod() - 1).plot(title="Out-of-Sample Compounded PnL", figsize=(10,5),
+                                        ylabel="Compounded Total Return", xlabel="Date")
     plt.show()
 
-    # Benchmark: equal-weight portfolio
-    print("\n=== BENCHMARK: EQUAL-WEIGHT PORTFOLIO ===")
+    # --- Benchmark: equal-weight portfolio ---
     ew = test.groupby("date")["ret_1d"].mean()
-    metrics_ew = compute_metrics(ew)
-    print(f"Mean daily return: {metrics_ew[0]:.5f}")
-    print(f"Std dev: {metrics_ew[1]:.5f}")
-    print(f"Annualized Sharpe: {metrics_ew[2]:.2f}")
-    print(f"Hit rate: {metrics_ew[3]*100:.1f}%")
-    (ew.cumsum()).plot(title="Benchmark Equal-Weight Cumulative PnL", figsize=(10,5))
+    print_metrics_summary("BENCHMARK: EQUAL-WEIGHT PORTFOLIO", ew)
+    ((1 + ew).cumprod() - 1).plot(title="Equal-Weight Compounded PnL", figsize=(10,5),
+                                    ylabel="Compounded Total Return", xlabel="Date")
     plt.show()
 
+    # --- Benchmark: SPY ---
+    spy_prices = load_prices([SPY_TICKER], start_date=start_date)
+    spy_prices = compute_daily_returns(spy_prices)
+    spy_test = spy_prices[spy_prices["date"] >= split_date].copy()
+    spy_returns = spy_test.set_index("date")["ret_1d"]
+    
+    print_metrics_summary("BENCHMARK: SPY", spy_returns)
+    ((1 + spy_returns).cumprod() - 1).plot(title="SPY Compounded Returns", figsize=(10,5),
+                                            ylabel="Compounded Total Return", xlabel="Date")
+    plt.show()
+
+    # --- Comparison Overlay ---
+    cum_df = pd.DataFrame({
+        "Strategy OOS": (1 + pnl_test).cumprod() - 1,
+        "Equal-Weight": (1 + ew).cumprod() - 1,
+        "SPY": (1 + spy_returns).cumprod() - 1,
+    })
+    cum_df.plot(title="Compounded Returns Comparison", figsize=(12,6), ylabel="Total Return")
+    plt.axhline(0, color='black', lw=1, ls='--')
+    plt.show()
 
 if __name__ == "__main__":
-    tickers = ["AAPL", "MSFT", "GOOG"]  # Replace with full universe later
+    # Example tickers; you can expand to 10 or more later
+    tickers = ["AAPL", "NVDA", "MSFT", "LCID"]
     performance_analysis(tickers)

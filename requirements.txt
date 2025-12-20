@@ -1,3 +1,8 @@
+"""
+Requirements.txt specifies the Python libraries needed to  
+handle the quantitative pipeline for data ingestion, 
+engineering, and visualization.
+"""
 pandas>=2.0
 numpy>=1.27
 yfinance>=0.2
