@@ -1,5 +1,13 @@
 """
+Diagnostics.py serves as a "checker" to make sure that the end-to-end
+pipeline is functioning without any code crashes. It allows the user
+to verify (quickly) that the data flows correctly from the loader
+into the backtester before committing to full-scale performance analysis.
 
+In the future, it can be expanded into a testing unit that checks for 
+data gaps, signal decay, or correlation thresholds. This would provide 
+an early "warning" for "broken" signals that could lead to misleading
+backtest results.
 """
 
 import pandas as pd                 #imports pandas
