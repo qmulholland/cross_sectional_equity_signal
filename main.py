@@ -4,7 +4,7 @@ from engine.backtest import run_backtest
 from engine.output import generate_performance_report
 
 # CONFIG
-TICKERS = ["AAPL", "MSFT", "GOOG", "AMZN", "TSLA", "META", "NVDA", "NFLX"] # Add your tickers
+TICKERS = ["NVDA", "MSFT", "AAPL", "NFLX", "GOOG"] # Add your tickers
 START_DATE = "2018-01-01"
 SPLIT_DATE = "2022-01-01"
 SPY_TICKER = "SPY"
