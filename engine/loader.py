@@ -1,7 +1,7 @@
 import pandas as pd
 import yfinance as yf
 
-def load_prices(tickers: list[str], start_date: str, end_date: str = None) -> pd.DataFrame:
+def load_data(tickers: list[str], start_date: str, end_date: str = None) -> pd.DataFrame:
     data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=False, group_by="ticker")
     frames = []
     for ticker in tickers:
