@@ -1,16 +1,18 @@
 # Core Data Handling
-pandas>=2.0
-numpy>=1.20
+pandas>=2.0.0
+numpy>=1.20.0
 
 # Data Acquisition
-yfinance>=0.2
+yfinance>=0.2.0
+
+# Technical Analysis & Strategy
+pandas_ta>=0.3.14b0
 
 # Visualization
-matplotlib>=3.8
+matplotlib>=3.8.0
 
-
-#Requirements.txt specifies the Python libraries needed to  
-#handle the quantitative pipeline for data ingestion, 
-#engineering, and visualization.
-
-#Run with "pip install -r requirements.txt"
+""" 
+Requirements.txt specifies the Python libraries needed to  
+handle the quantitative pipeline for data ingestion, 
+engineering, and visualization.
+"""
