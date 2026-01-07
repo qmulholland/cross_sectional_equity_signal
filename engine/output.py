@@ -1,79 +1,59 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-def print_metrics_summary(label, pnl_series, initial_capital=1000):
-    """Formats and prints detailed performance report including capital growth and risk."""
-    mean = pnl_series.mean()
-    std = pnl_series.std()
-    sharpe = (mean / std) * np.sqrt(252)
-    hit_rate = (pnl_series > 0).mean() * 100
+def generate_performance_report(strat_returns, spy_returns, start_year):
+    """
+    Generates a performance report with highly detailed x-axis (Day-Month-Year).
+    """
+    # 1. Calculate Metrics
+    sharpe = (strat_returns.mean() / strat_returns.std()) * np.sqrt(252) if strat_returns.std() != 0 else 0
+    cum_growth = (1 + strat_returns).prod() * 1000
     
-    # Calculates the sequence of portfolio values
-    cum_returns = (1 + pnl_series).cumprod()
-    final_value = initial_capital * cum_returns.iloc[-1]
+    # Drawdown calculation
+    cum_rets = (1 + strat_returns).cumprod()
+    running_max = cum_rets.cummax()
+    drawdown = (cum_rets / running_max) - 1
+    max_dd = drawdown.min()
+
+    # 2. Print Output
+    print("\n" + "="*45)
+    print(f"=== COMBINED PERFORMANCE (SINCE {start_year}) ===")
+    print(f"Strategy's Annualized Sharpe: {sharpe:.2f}")
+    print(f"Strategy's Max Drawdown:      {max_dd:.2%}")
+    print(f"Strategy's Ending Value ($1000 Start): ${cum_growth:.2f}")
     
-    # Measures Drawdown
-    running_max = cum_returns.cummax()
-    drawdown = (cum_returns - running_max) / running_max
-    max_drawdown = drawdown.min() * 100
+    spy_growth = (1 + spy_returns).prod() * 1000
+    print(f"SPY's Ending Value ($1000 Start):      ${spy_growth:.2f}")
+    print("="*45 + "\n")
+
+    # 3. Combined Graph
+    fig, ax = plt.subplots(figsize=(14, 7)) # Slightly wider for date room
     
-    print(f"=== {label} ===")
-    print(f"Annualized Sharpe: {sharpe:.2f}")
-    print(f"Hit rate: {hit_rate:.1f}%")
-    print(f"Max Drawdown: {max_drawdown:.2f}%")
-    print(f"Compounded Growth (Start $1000): ${final_value:,.2f}")
-    print()
-
-def generate_performance_report(pnl_is, pnl_oos, test_data, spy_returns):
-    """Generates visual charts with straightforward linear Y-axis scaling."""
+    strat_cum = (1 + strat_returns).cumprod() * 1000
+    spy_cum = (1 + spy_returns).cumprod() * 1000
     
-    # 1. In-Sample Plot
-    fig1, ax1 = plt.subplots(figsize=(12, 6))
-    is_growth = (1 + pnl_is).cumprod() * 1000  # Growth of $1000
-    is_growth.plot(ax=ax1, title="In-Sample Strategy Growth ($1,000 Start)")
-    ax1.set_ylabel("Portfolio Value ($)")
-    ax1.grid(True, alpha=0.3)
-    print_metrics_summary("IN-SAMPLE PERFORMANCE", pnl_is)
-    plt.show()
+    ax.plot(strat_cum, label="Our Strategy", color="#1f77b4", lw=2)
+    ax.plot(spy_cum, label="SPY Benchmark", color="#d62728", linestyle="--", alpha=0.8)
+    
+    # --- DETAILED X-AXIS FORMATTING ---
+    # Major Ticks: Labels showing Date-Month-Year every 4 months
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%b-%Y'))
+    
+    # Minor Ticks: Small marks for every month (no labels) to show density
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    
+    # Rotate labels 45 degrees for readability
+    plt.xticks(rotation=45)
+    # ----------------------------------
 
-    # 2. Out-of-Sample Plot
-    fig2, ax2 = plt.subplots(figsize=(12, 6))
-    oos_growth = (1 + pnl_oos).cumprod() * 1000
-    oos_growth.plot(ax=ax2, title="Out-of-Sample Strategy Growth ($1,000 Start)")
-    ax2.set_ylabel("Portfolio Value ($)")
-    ax2.grid(True, alpha=0.3)
-    print_metrics_summary("OUT-OF-SAMPLE PERFORMANCE", pnl_oos)
-    plt.show()
-
-    # 3. Equal-Weight Benchmark
-    fig3, ax3 = plt.subplots(figsize=(12, 6))
-    ew = test_data.groupby("date")["ret_1d"].mean()
-    ew_growth = (1 + ew).cumprod() * 1000
-    ew_growth.plot(ax=ax3, title="Equal-Weight Portfolio Growth ($1,000 Start)")
-    ax3.set_ylabel("Portfolio Value ($)")
-    ax3.grid(True, alpha=0.3)
-    print_metrics_summary("BENCHMARK: EQUAL-WEIGHT PORTFOLIO", ew)
-    plt.show()
-
-    # 4. SPY Benchmark
-    fig4, ax4 = plt.subplots(figsize=(12, 6))
-    spy_growth = (1 + spy_returns).cumprod() * 1000
-    spy_growth.plot(ax=ax4, title="SPY Benchmark Growth ($1,000 Start)")
-    ax4.set_ylabel("Portfolio Value ($)")
-    ax4.grid(True, alpha=0.3)
-    print_metrics_summary("BENCHMARK: SPY", spy_returns)
-    plt.show()
-
-    # 5. Final Comparison Chart (Multi-line)
-    fig5, ax5 = plt.subplots(figsize=(12, 6))
-    cum_df = pd.DataFrame({
-        "Our Strategy": oos_growth,
-        "Equal-Weight": ew_growth,
-        "SPY Index": spy_growth,
-    })
-    cum_df.plot(ax=ax5, title="Comparison: Strategy vs Benchmarks (OOS Period)")
-    ax5.set_ylabel("Portfolio Value ($)")
-    ax5.axhline(1000, color='black', lw=1, ls='--') # Starting capital line
-    ax5.grid(True, alpha=0.3)
+    ax.set_title(f"Strategy Growth vs. SPY Benchmark (Since {start_year})")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Portfolio Value ($)")
+    ax.legend()
+    ax.grid(True, which='both', alpha=0.3) # Show grid for major and minor ticks
+    
+    plt.tight_layout()
     plt.show()

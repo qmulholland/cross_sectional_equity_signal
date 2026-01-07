@@ -2,47 +2,42 @@ from engine.loader import load_data
 from engine.backtest import run_backtest
 from engine.output import generate_performance_report
 from strategy.rsi_signal import apply_strategy
+import pandas as pd
 
 def main():
-    # 1. Define Universe (Expanded list to ensure Top 25 volume filter has enough data)
+    # Define start date here
+    START_DATE = "2020-01-01"
+    # Extract the year for the report header
+    start_year = START_DATE.split("-")[0]
+    
+    # 1. Universe
     tickers = ["AAPL", "TSLA", "NVDA", "AMD", "MSFT", "GOOGL", "AMZN", "META", 
-               "NFLX", "INTC", "PYPL", "AVGO"] 
+               "NFLX", "INTC", "PYPL", "AVGO", "SPY"] 
     
-    # 2. Load Data (Matches your loader.py: load_data(tickers, start_date))
-    print("Loading data:")
-    raw_data = load_data(tickers, start_date="2021-01-01")
+    # 2. Load Data
+    print(f"Loading data since {start_year}:")
+    raw_data = load_data(tickers, start_date=START_DATE)
     
-    # 3. Apply RSI 9 Strategy Logic
-    print("Calculating RSI Signals:")
+    # 3. Apply Strategy
     processed_data = apply_strategy(raw_data)
     
-    # 4. Split Data & Pre-calculate Returns for the Output Engine
-    split_date = "2024-01-01"
-    is_data = processed_data[processed_data['date'] < split_date].copy()
-    oos_data = processed_data[processed_data['date'] >= split_date].copy()
+    # 4. Filter Strategy Assets
+    strat_data = processed_data[processed_data['ticker'] != 'SPY'].copy()
     
-    # FIX: Add 1-day returns column required by engine/output.py
-    # We apply this to oos_data as it is used for the benchmark plotting
-    oos_data['ret_1d'] = oos_data.groupby('ticker')['adj_close'].pct_change().fillna(0)
+    # 5. Run Combined Backtest
+    print("Running Backtest:")
+    strat_returns = run_backtest(strat_data)
     
-    # 5. Run Signal-Driven Backtest (Simulates trades based on $1,000 start)
-    print("Running Backtest Simulations...")
-    strat_returns_is = run_backtest(is_data)
-    strat_returns_oos = run_backtest(oos_data)
+    # 6. Extract SPY Benchmark Returns
+    spy_df = processed_data[processed_data['ticker'] == 'SPY'].copy()
+    spy_returns = spy_df.set_index('date')['adj_close'].pct_change().fillna(0)
     
-    # 6. Create Benchmark Returns (Average of all tickers)
-    # This satisfies the 'spy_returns' positional argument in generate_performance_report
-    spy_returns = oos_data.groupby('date')['ret_1d'].mean().fillna(0)
+    # Align SPY returns to the strategy timeline
+    spy_returns = spy_returns.reindex(strat_returns.index).fillna(0)
     
-    # 7. Generate Output Report
-    # Passing the 4 required arguments: IS PnL, OOS PnL, Raw Data, and Benchmark PnL
-    print("Generating Performance Report...")
-    generate_performance_report(
-        strat_returns_is, 
-        strat_returns_oos, 
-        oos_data,
-        spy_returns
-    )
+    # 7. Generate Combined Report (Passing start_year)
+    print("Generating Combined Performance Report:")
+    generate_performance_report(strat_returns, spy_returns, start_year)
 
 if __name__ == "__main__":
     main()
