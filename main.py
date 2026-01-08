@@ -11,8 +11,16 @@ def main():
     start_year = START_DATE.split("-")[0]
     
     # 1. Universe
-    tickers = ["AAPL", "TSLA", "NVDA", "AMD", "MSFT", "GOOGL", "AMZN", "META", 
-               "NFLX", "INTC", "PYPL", "AVGO", "SPY"] 
+    # NEED to keep 'SPY' in, everything else can be changed
+    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 
+                'META', 'TSLA', 'BRK-B', 'V', 'UNH', 'JPM', 
+                'JNJ', 'WMT', 'MA', 'PG', 'HD', 'LLY', 'AVGO', 
+                'ORCL', 'CVX', 'COST', 'PEP', 'ABBV', 'KO', 
+                'ADBE', 'WFC', 'BAC', 'CSCO', 'CRM', 'TMO', 
+                'PFE', 'NFLX', 'DHR', 'ACN', 'AMD', 'LIN', 
+                'ABT', 'DIS', 'TXN', 'PM', 'INTC', 'HON', 'VZ', 
+                'AMGN', 'INTU', 'IBM', 'GE', 'CAT', 'UBER', 
+                'QCOM', 'SPY']
     
     # 2. Load Data
     print(f"Loading data since {start_year}:")
