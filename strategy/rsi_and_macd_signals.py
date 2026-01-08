@@ -1,3 +1,17 @@
+"""
+The rsi_and_macd_signals.py module acts as the 'Signal
+Factory' for the framework. It processes raw price data
+to generate actionable trading signals by combining 
+momentum and trend-following indicators. By integrating
+both the Relative Strength Index (RSI) and Moving
+Average Convergence Divergence (MACD), the module
+identifies high-conviction entry and exit points for
+the backtesting engine. The logic is designed for 
+efficiency, mapping multi-column indicator outputs back 
+to the primary DataFrame to maintain data alignment for 
+downstream boolean logic execution.
+"""
+
 import pandas as pd
 import pandas_ta as ta
 
