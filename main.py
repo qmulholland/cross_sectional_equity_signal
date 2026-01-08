@@ -24,7 +24,7 @@ def main():
                 'AMGN', 'INTU', 'IBM', 'GE', 'CAT', 'UBER', 
                 'QCOM', 'SPY']
     
-    # Ingests historical data using the modular loader engine
+    # Takes in historical data using the modular loader engine
     print(f"Loading data since {start_year}:")
     raw_data = load_data(tickers, start_date=START_DATE)
     
