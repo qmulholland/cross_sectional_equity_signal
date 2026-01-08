@@ -1,3 +1,14 @@
+"""
+The backtest.py module is the mathematical core of the 
+framework. It transforms theorhetical trading signals
+into a simulated portfolio performance. It utilizes a
+cross-sectional ranking logic to filter the top 25 
+stocks by volume daily, ensuring we are only trading 
+liquid assets. To maintain statistical integrity, it 
+employs a one-day signal lag (.shift(1)) to eliminate
+look-ahead bias, ensuring that execution occurs at the 
+price following the signal generation.
+"""
 import pandas as pd
 import numpy as np
 
