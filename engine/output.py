@@ -1,3 +1,17 @@
+"""
+The output.py module is the reporting engine of the framework. It
+translates raw daily returns into professional performance metrics
+and visualizes the strategy's growth compared to a market benchmark
+(the SPY). By providing a clear side-by-side comparison with the
+S&P 500 (SPY), it allows for an immediate assessment of the strategy's
+effectiveness and value-add. It utilizes NumPy for vectorized 
+calculations of risk metrics like the Sharpe Ratio and Maximum Drawdown.
+The visualization suite is built on Matplotlib, utilizing advanced
+date-locators and formatters to handle multi-year time-series data
+without overlapping labels, ensuring the final report is 
+production-quality and easily interpretable.
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
