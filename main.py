@@ -1,16 +1,18 @@
 from engine.loader import load_data
 from engine.backtest import run_backtest
 from engine.output import generate_performance_report
-from strategy.rsi_signal import apply_strategy
+from strategy.rsi_and_macd_signals import apply_strategy
 import pandas as pd
 
 def main():
-    # Define start date here
+
+    # Defines start point for the backtest
     START_DATE = "2020-01-01"
-    # Extract the year for the report header
+
+    # Extracts year for labeling in the final performance report
     start_year = START_DATE.split("-")[0]
     
-    # 1. Universe
+    # Defines ticker 'universe'
     # NEED to keep 'SPY' in, everything else can be changed
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 
                 'META', 'TSLA', 'BRK-B', 'V', 'UNH', 'JPM', 
@@ -22,30 +24,31 @@ def main():
                 'AMGN', 'INTU', 'IBM', 'GE', 'CAT', 'UBER', 
                 'QCOM', 'SPY']
     
-    # 2. Load Data
+    # Ingests historical data using the modular loader engine
     print(f"Loading data since {start_year}:")
     raw_data = load_data(tickers, start_date=START_DATE)
     
-    # 3. Apply Strategy
+    # Feature engineering and signal generation via strategy module
     processed_data = apply_strategy(raw_data)
     
-    # 4. Filter Strategy Assets
+    # Isolates the equities from the benchmark to run the strategy simulation
     strat_data = processed_data[processed_data['ticker'] != 'SPY'].copy()
     
-    # 5. Run Combined Backtest
+    # Executes the vectorized backtesting engine to calculate daily strategy returns
     print("Running Backtest:")
     strat_returns = run_backtest(strat_data)
     
-    # 6. Extract SPY Benchmark Returns
+    # Prepare benchmark data: Calculate daily percentage returns for SPY
     spy_df = processed_data[processed_data['ticker'] == 'SPY'].copy()
     spy_returns = spy_df.set_index('date')['adj_close'].pct_change().fillna(0)
     
-    # Align SPY returns to the strategy timeline
+    # Align benchmark indicies with strategy results to ensure "apples-to-apples"
     spy_returns = spy_returns.reindex(strat_returns.index).fillna(0)
     
-    # 7. Generate Combined Report (Passing start_year)
+    # Visualize results and calculate risk metrics (Sharpe Ratio, Drawdown, etc.)
     print("Generating Combined Performance Report:")
     generate_performance_report(strat_returns, spy_returns, start_year)
 
 if __name__ == "__main__":
+    # Standard Python entry point to execute main function
     main()
