@@ -1,10 +1,11 @@
 """
 The loader.py module serves as the entry point for the entire pipeline.
-It handles the automated retrieval for the ticker universe using the 
-Yahoo Finance API. By centralizing the data ingestion and cleaning process,
-it ensures that all subsequent strategy and backtesting modules receive
-a standardized, 'analysis-ready' dataset. The modules transforms raw,
-multi-indexed data into a 'Tidy' long-format DataFrame.
+It handles the automated retrieval of historical data for the ticker 
+universe using the Yahoo Finance API. By centralizing the data ingestion 
+and cleaning process, it ensures that all subsequent strategy and 
+backtesting modules receive a standardized, 'analysis-ready' dataset. 
+The module transforms raw, multi-indexed data into a 'Tidy' 
+long-format DataFrame.
 """
 import pandas as pd
 import yfinance as yf
